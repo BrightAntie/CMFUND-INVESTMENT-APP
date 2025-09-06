@@ -5,6 +5,7 @@ import SignIn from './components/SignIn';
 import Onboarding from './components/Onboarding';
 import Dashboard from './components/Dashboard';
 import BackOffice from './components/BackOffice';
+import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('signin');
@@ -27,22 +28,24 @@ function App() {
 
   return (
     <div className="min-h-screen">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={currentPage}
-          initial="initial"
-          animate="in"
-          exit="out"
-          variants={pageVariants}
-          transition={pageTransition}
-        >
-          {currentPage === 'signup' && <SignUp onNavigate={handleNavigate} />}
-          {currentPage === 'signin' && <SignIn onNavigate={handleNavigate} />}
-          {currentPage === 'onboarding' && <Onboarding onNavigate={handleNavigate} />}
-          {currentPage === 'dashboard' && <Dashboard onNavigate={handleNavigate} />}
-          {currentPage === 'backoffice' && <BackOffice onNavigate={handleNavigate} />}
-        </motion.div>
-      </AnimatePresence>
+      <ErrorBoundary>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentPage}
+            initial="initial"
+            animate="in"
+            exit="out"
+            variants={pageVariants}
+            transition={pageTransition}
+          >
+            {currentPage === 'signup' && <SignUp onNavigate={handleNavigate} />}
+            {currentPage === 'signin' && <SignIn onNavigate={handleNavigate} />}
+            {currentPage === 'onboarding' && <Onboarding onNavigate={handleNavigate} />}
+            {currentPage === 'dashboard' && <Dashboard onNavigate={handleNavigate} />}
+            {currentPage === 'backoffice' && <BackOffice onNavigate={handleNavigate} />}
+          </motion.div>
+        </AnimatePresence>
+      </ErrorBoundary>
 
       {/* Navigation Helper - Remove in production */}
       <div className="fixed bottom-4 right-4 z-50">

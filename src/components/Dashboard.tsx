@@ -15,7 +15,7 @@ import {
   Calendar
 } from 'lucide-react';
 import Layout from './Layout';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Cell, LineChart, Line } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, LineChart, Line } from 'recharts';
 
 interface DashboardProps {
   onNavigate: (page: string) => void;
@@ -55,7 +55,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       date: '10-JUN-2022',
       description: 'SDC Bond Fund',
       quantityBought: 800,
-      purchasePrice: 18.25,
       purchasePrice: 18.25,
       amountInvested: 14600.00,
       shareBalance: 2300,
@@ -143,7 +142,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
               change: '+12.5%',
               trend: 'up',
               icon: DollarSign,
-              color: 'bg-blue-500'
+              color: 'bg-orange-500'
             },
             {
               title: 'Total Gains',
@@ -151,7 +150,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
               change: '+8.2%',
               trend: 'up',
               icon: TrendingUp,
-              color: 'bg-green-500'
+              color: 'bg-orange-600'
             },
             {
               title: 'Current Value',
@@ -159,7 +158,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
               change: '+15.7%',
               trend: 'up',
               icon: PieChart,
-              color: 'bg-orange-500'
+              color: 'bg-orange-700'
             },
             {
               title: 'Total Sold',
@@ -167,7 +166,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
               change: '-2.1%',
               trend: 'down',
               icon: BarChart3,
-              color: 'bg-purple-500'
+              color: 'bg-orange-400'
             }
           ].map((card, index) => (
             <motion.div
@@ -222,24 +221,26 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 ))}
               </div>
             </div>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={monthlyFlowData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
-                <XAxis dataKey="month" stroke="#6B7280" />
-                <YAxis stroke="#6B7280" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#1F2937', 
-                    border: 'none', 
-                    borderRadius: '8px',
-                    color: '#F9FAFB'
-                  }}
-                  formatter={(value: number) => [formatCurrency(value), '']}
-                />
-                <Bar dataKey="invested" fill="#FF6200" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="gains" fill="#FF8A3D" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={monthlyFlowData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+                  <XAxis dataKey="month" stroke="#6B7280" />
+                  <YAxis stroke="#6B7280" />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#1F2937', 
+                      border: 'none', 
+                      borderRadius: '8px',
+                      color: '#F9FAFB'
+                    }}
+                    formatter={(value: number) => [formatCurrency(value), '']}
+                  />
+                  <Bar dataKey="invested" fill="#FF6200" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="gains" fill="#FF8A3D" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </motion.div>
 
           {/* Portfolio Allocation */}
@@ -250,8 +251,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg"
           >
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Portfolio Allocation</h3>
-            <div className="flex items-center justify-center">
-              <ResponsiveContainer width="100%" height={300}>
+            <div className="h-[300px] flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
                 <RechartsPieChart>
                   <Pie
                     data={portfolioData}
@@ -284,7 +285,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           </motion.div>
         </div>
 
-        {/* Investment Goals */}
+        {/* Performance Chart */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -292,36 +293,86 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg"
         >
           <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Portfolio Performance</h3>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 rounded-full bg-orange-500"></div>
+                <span className="text-sm text-gray-600 dark:text-gray-400">Portfolio Value</span>
+              </div>
+            </div>
+          </div>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={performanceData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+                <XAxis dataKey="month" stroke="#6B7280" />
+                <YAxis stroke="#6B7280" />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#1F2937', 
+                    border: 'none', 
+                    borderRadius: '8px',
+                    color: '#F9FAFB'
+                  }}
+                  formatter={(value: number) => [formatCurrency(value), 'Portfolio Value']}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="value" 
+                  stroke="#FF6200" 
+                  strokeWidth={3}
+                  dot={{ fill: '#FF6200', strokeWidth: 2, r: 6 }}
+                  activeDot={{ r: 8, stroke: '#FF6200', strokeWidth: 2 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </motion.div>
+
+        {/* Investment Goals */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+          className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg"
+        >
+          <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center">
               <Target className="w-6 h-6 mr-2 text-orange-500" />
               Investment Goals
             </h3>
-            <button className="text-orange-500 hover:text-orange-600 text-sm font-medium">
+            <button className="text-orange-500 hover:text-orange-600 text-sm font-medium transition-colors duration-300">
               View All
             </button>
           </div>
           <div className="space-y-6">
             {investmentGoals.map((goal, index) => (
-              <div key={index} className="space-y-2">
+              <motion.div 
+                key={index} 
+                className="space-y-3 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.8 + index * 0.1 }}
+              >
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-900 dark:text-white">{goal.name}</span>
                   <span className="text-sm text-gray-600 dark:text-gray-400">
                     {formatCurrency(goal.current)} / {formatCurrency(goal.target)}
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-3">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${goal.progress}%` }}
-                    transition={{ delay: 0.8 + index * 0.1, duration: 1 }}
-                    className="bg-orange-500 h-2 rounded-full"
+                    transition={{ delay: 1 + index * 0.1, duration: 1.2, ease: "easeOut" }}
+                    className="bg-gradient-to-r from-orange-500 to-orange-600 h-3 rounded-full shadow-sm"
                   ></motion.div>
                 </div>
                 <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-                  <span>{goal.progress}% complete</span>
+                  <span className="font-medium">{goal.progress}% complete</span>
                   <span>{formatCurrency(goal.target - goal.current)} remaining</span>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </motion.div>
@@ -330,7 +381,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
+          transition={{ delay: 0.8 }}
           className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden"
         >
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">
@@ -381,7 +432,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                     key={index}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.8 + index * 0.1 }}
+                    transition={{ delay: 0.9 + index * 0.05 }}
                     className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-300"
                   >
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
