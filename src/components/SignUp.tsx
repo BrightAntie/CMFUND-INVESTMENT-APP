@@ -48,10 +48,10 @@ const SignUp: React.FC<SignUpProps> = ({ onNavigate }) => {
             transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
             className="w-16 h-16 bg-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-4"
           >
-            <span className="text-white font-bold text-2xl">SDC</span>
+            <span className="text-white font-bold text-2xl">CM</span>
           </motion.div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Join SDC Capital
+            Join CM FUND
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
             Start your investment journey today

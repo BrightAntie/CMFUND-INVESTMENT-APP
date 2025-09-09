@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   TrendingUp, 
-  TrendingDown, 
   DollarSign, 
   PieChart, 
   BarChart3,
@@ -10,26 +9,109 @@ import {
   ArrowDownRight,
   Filter,
   Download,
-  Eye,
-  Target,
-  Calendar
+  AlertCircle
 } from 'lucide-react';
 import Layout from './Layout';
+
+// Shared currency formatter for Ghanaian Cedi (GH₵)
+const formatCurrency = (amount: number) => {
+  try {
+    return new Intl.NumberFormat('en-GH', {
+      style: 'currency',
+      currency: 'GHS',
+      currencyDisplay: 'narrowSymbol',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount);
+  } catch {
+    return `GH₵${amount.toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+};
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, LineChart, Line } from 'recharts';
 
 interface DashboardProps {
-  onNavigate: (page: string) => void;
+  onNavigate?: (page: string) => void;
+}
+
+interface DashboardData {
+  summary: {
+    totalInvested: number;
+    totalGains: number;
+    currentValue: number;
+    totalSold: number;
+  };
+  recentTransactions: Array<{
+    tnx_date: string;
+    description: string;
+    qty_bought: number;
+    purchase_price: number;
+    amount_invested: number;
+    share_balance: number;
+    current_value: number;
+    gain: number;
+    qty_sold: number;
+    charges: number;
+  }>;
+  performance: Array<{
+    month: string;
+    invested: number;
+    gains: number;
+    currentValue: number;
+  }>;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const [selectedTimeframe, setSelectedTimeframe] = useState('1Y');
   const [sortConfig, setSortConfig] = useState({ key: '', direction: 'asc' });
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  // Sample transaction data based on the requirements
+  // Fetch dashboard data on component mount
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+      // If not logged in or no member ID, fall back to sample data without error
+      if (!token || !user.csm_memberID) {
+        setDashboardData(null);
+        return;
+      }
+
+      const response = await fetch(`/api/dashboard/${user.csm_memberID}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        // Backend not ready: use sample data
+        setDashboardData(null);
+        return;
+      }
+
+      const data = await response.json();
+      setDashboardData(data.data);
+    } catch (error) {
+      // Backend/DB not available: use sample data without showing error UI
+      console.warn('Dashboard fetch error, showing sample data:', error);
+      setDashboardData(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Sample transaction data based on the requirements (fallback)
   const transactionData = [
     {
       date: '26-JAN-2021',
-      description: 'SDC Growth Fund',
+      description: 'CM FUND Growth Fund',
       quantityBought: 1000,
       purchasePrice: 15.70,
       amountInvested: 15700.00,
@@ -41,7 +123,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     },
     {
       date: '15-MAR-2021',
-      description: 'SDC Equity Fund',
+      description: 'CM FUND Equity Fund',
       quantityBought: 500,
       purchasePrice: 22.40,
       amountInvested: 11200.00,
@@ -53,7 +135,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     },
     {
       date: '10-JUN-2022',
-      description: 'SDC Bond Fund',
+      description: 'CM FUND Bond Fund',
       quantityBought: 800,
       purchasePrice: 18.25,
       amountInvested: 14600.00,
@@ -65,7 +147,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     },
     {
       date: '28-AUG-2024',
-      description: 'SDC Growth Fund',
+      description: 'CM FUND Growth Fund',
       quantityBought: 0,
       purchasePrice: 0,
       amountInvested: 0,
@@ -77,11 +159,25 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     }
   ];
 
-  // Summary calculations
-  const totalInvested = transactionData.reduce((sum, item) => sum + item.amountInvested, 0);
-  const totalGains = transactionData.reduce((sum, item) => sum + item.gain, 0);
-  const currentValue = transactionData.reduce((sum, item) => sum + item.currentValue, 0);
-  const totalSold = transactionData.filter(item => item.quantitySold > 0).reduce((sum, item) => sum + (item.quantitySold * item.purchasePrice), 0);
+  // Summary calculations - use real data if available, fallback to sample data
+  const summary = dashboardData?.summary || {
+    totalInvested: transactionData.reduce((sum: number, item: any) => sum + item.amountInvested, 0),
+    totalGains: transactionData.reduce((sum: number, item: any) => sum + item.gain, 0),
+    currentValue: transactionData.reduce((sum: number, item: any) => sum + item.currentValue, 0),
+    totalSold: transactionData.filter((item: any) => item.quantitySold > 0).reduce((sum: number, item: any) => sum + (item.quantitySold * item.purchasePrice), 0)
+  };
+
+  const transactionDataToUse = dashboardData?.recentTransactions || transactionData;
+
+  // Derived share metrics and YTD gains (fallback calculation)
+  const investedShares = transactionDataToUse.reduce((sum: number, t: any) => sum + (t.quantityBought || t.qty_bought || 0), 0);
+  const currentShares = transactionDataToUse.reduce((sum: number, t: any) => sum + (t.shareBalance ?? t.share_balance ?? 0), 0);
+  const soldShares = transactionDataToUse.reduce((sum: number, t: any) => sum + (t.quantitySold || t.qty_sold || 0), 0);
+  const ytdGainsPct = (() => {
+    const denom = summary.totalInvested || 0;
+    if (denom <= 0) return 0;
+    return (summary.totalGains / denom) * 100;
+  })();
 
   // Chart data
   const monthlyFlowData = [
@@ -126,45 +222,79 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     setSortConfig({ key, direction });
   };
 
-  const formatCurrency = (amount: number) => {
-    return `GH₵${amount.toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <Layout onNavigate={onNavigate}>
+        <div className="flex items-center justify-center min-h-96">
+          <div className="text-center">
+            <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">Loading your dashboard...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-96">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-8 h-8 text-red-500" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Error Loading Dashboard</h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
+            <button
+              onClick={fetchDashboardData}
+              className="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors duration-300"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
-    <Layout>
+    <Layout onNavigate={onNavigate}>
       <div className="space-y-8">
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
             {
               title: 'Total Invested',
-              value: formatCurrency(totalInvested),
-              change: '+12.5%',
+              value: formatCurrency(summary.totalInvested),
+              change: `Shares: ${investedShares.toLocaleString()}`,
               trend: 'up',
               icon: DollarSign,
               color: 'bg-orange-500'
             },
             {
               title: 'Total Gains',
-              value: formatCurrency(totalGains),
-              change: '+8.2%',
-              trend: 'up',
+              value: formatCurrency(summary.totalGains),
+              change: `YTD: ${ytdGainsPct >= 0 ? '+' : ''}${ytdGainsPct.toFixed(1)}%`,
+              trend: ytdGainsPct >= 0 ? 'up' : 'down',
               icon: TrendingUp,
               color: 'bg-orange-600'
             },
             {
               title: 'Current Value',
-              value: formatCurrency(currentValue),
-              change: '+15.7%',
+              value: formatCurrency(summary.currentValue),
+              change: `Shares: ${currentShares.toLocaleString()}`,
               trend: 'up',
               icon: PieChart,
-              color: 'bg-orange-700'
+              color: 'bg-orange-500'
             },
             {
               title: 'Total Sold',
-              value: formatCurrency(totalSold),
-              change: '-2.1%',
-              trend: 'down',
+              value: formatCurrency(summary.totalSold),
+              change: `Shares: ${soldShares.toLocaleString()}`,
+              trend: 'up',
               icon: BarChart3,
               color: 'bg-orange-400'
             }
@@ -181,10 +311,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 <div className={`w-12 h-12 ${card.color} rounded-xl flex items-center justify-center`}>
                   <card.icon className="w-6 h-6 text-white" />
                 </div>
-                <div className={`flex items-center text-sm font-medium ${
-                  card.trend === 'up' ? 'text-green-500' : 'text-red-500'
+                <div className={`text-xs font-medium px-2 py-1 rounded-md ${
+                  card.trend === 'up' ? 'text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-900/30' :
+                  card.trend === 'down' ? 'text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-900/30' :
+                  'text-gray-700 bg-gray-100 dark:text-gray-300 dark:bg-gray-700'
                 }`}>
-                  {card.trend === 'up' ? <ArrowUpRight className="w-4 h-4 mr-1" /> : <ArrowDownRight className="w-4 h-4 mr-1" />}
                   {card.change}
                 </div>
               </div>
@@ -329,51 +460,22 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           </div>
         </motion.div>
 
-        {/* Investment Goals */}
+        {/* Bonds & Crops Feeds */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
-          className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg"
+          className="grid grid-cols-1 lg:grid-cols-2 gap-8"
         >
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center">
-              <Target className="w-6 h-6 mr-2 text-orange-500" />
-              Investment Goals
-            </h3>
-            <button className="text-orange-500 hover:text-orange-600 text-sm font-medium transition-colors duration-300">
-              View All
-            </button>
+          {/* Bonds */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Bonds</h3>
+            <BondsFeed />
           </div>
-          <div className="space-y-6">
-            {investmentGoals.map((goal, index) => (
-              <motion.div 
-                key={index} 
-                className="space-y-3 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.8 + index * 0.1 }}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">{goal.name}</span>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {formatCurrency(goal.current)} / {formatCurrency(goal.target)}
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-3">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${goal.progress}%` }}
-                    transition={{ delay: 1 + index * 0.1, duration: 1.2, ease: "easeOut" }}
-                    className="bg-gradient-to-r from-orange-500 to-orange-600 h-3 rounded-full shadow-sm"
-                  ></motion.div>
-                </div>
-                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-                  <span className="font-medium">{goal.progress}% complete</span>
-                  <span>{formatCurrency(goal.target - goal.current)} remaining</span>
-                </div>
-              </motion.div>
-            ))}
+          {/* Crops */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Crops</h3>
+            <CropsFeed />
           </div>
         </motion.div>
 
@@ -427,7 +529,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {transactionData.map((transaction, index) => (
+                {transactionDataToUse.map((transaction: any, index: number) => (
                   <motion.tr
                     key={index}
                     initial={{ opacity: 0, y: 10 }}
@@ -479,3 +581,85 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 };
 
 export default Dashboard;
+
+// Simple feeds reading from public JSON endpoints
+function BondsFeed() {
+  const [items, setItems] = useState<Array<{ name: string; coupon: number; yieldPct: number; price: number }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch('/bonds.json');
+        if (!res.ok) throw new Error('Failed to load bonds feed');
+        const data = await res.json();
+        setItems(data.slice(0, 3));
+      } catch (e: any) {
+        setError('Unable to load bonds feed');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  if (loading) return <div className="text-sm text-gray-500 dark:text-gray-400">Loading bonds…</div>;
+  if (error) return <div className="text-sm text-red-500">{error}</div>;
+
+  return (
+    <div className="space-y-3">
+      {items.map((b, idx) => (
+        <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
+          <div>
+            <div className="text-sm font-semibold text-gray-900 dark:text-white">{b.name}</div>
+            <div className="text-xs text-gray-500 dark:text-gray-300">Coupon {b.coupon}% • Yield {b.yieldPct}%</div>
+          </div>
+          <div className="text-sm font-medium text-gray-900 dark:text-white">{formatCurrency(b.price)}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CropsFeed() {
+  const [items, setItems] = useState<Array<{ name: string; unit: string; price: number; changePct: number }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch('/crops.json');
+        if (!res.ok) throw new Error('Failed to load crops feed');
+        const data = await res.json();
+        setItems(data.slice(0, 3));
+      } catch (e: any) {
+        setError('Unable to load crops feed');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  if (loading) return <div className="text-sm text-gray-500 dark:text-gray-400">Loading crops…</div>;
+  if (error) return <div className="text-sm text-red-500">{error}</div>;
+
+  return (
+    <div className="space-y-3">
+      {items.map((c, idx) => (
+        <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
+          <div>
+            <div className="text-sm font-semibold text-gray-900 dark:text-white">{c.name}</div>
+            <div className="text-xs text-gray-500 dark:text-gray-300">{c.unit}</div>
+          </div>
+          <div className="text-right">
+            <div className="text-sm font-medium text-gray-900 dark:text-white">{formatCurrency(c.price)}</div>
+            <div className={`text-xs ${c.changePct >= 0 ? 'text-green-500' : 'text-red-500'}`}>{c.changePct >= 0 ? '+' : ''}{c.changePct}%</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}

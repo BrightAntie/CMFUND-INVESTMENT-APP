@@ -1,0 +1,7 @@
+[
+  { "name": "Maize", "unit": "per 100kg", "price": 420, "changePct": 1.2 },
+  { "name": "Cocoa", "unit": "per 64kg", "price": 1280, "changePct": -0.5 },
+  { "name": "Rice", "unit": "per 50kg", "price": 760, "changePct": 0.9 },
+  { "name": "Soya", "unit": "per 100kg", "price": 530, "changePct": 0.3 }
+]
+

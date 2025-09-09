@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { Search, Bell, User, Sun, Moon, Menu, X } from 'lucide-react';
+import { Search, Bell, User, Sun, Moon, Menu, X, Home, Wallet, Settings, MessageSquare, LineChart, HelpCircle, LogOut, Briefcase } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface LayoutProps {
   children: React.ReactNode;
   currentUser?: string;
+  onNavigate?: (page: string) => void;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, currentUser = "Adjei Godfred Emmanuel" }) => {
+const Layout: React.FC<LayoutProps> = ({ children, currentUser = "Adjei Godfred Emmanuel", onNavigate }) => {
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isSidebarHidden, setIsSidebarHidden] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const toggleTheme = () => {
@@ -17,7 +19,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentUser = "Adjei Godfred 
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${
+    <div className={`min-h-screen transition-colors duration-300 overflow-x-hidden ${
       isDarkMode ? 'bg-gray-900 text-white' : 'bg-purple-50 text-gray-900'
     }`}>
       {/* Header */}
@@ -29,10 +31,10 @@ const Layout: React.FC<LayoutProps> = ({ children, currentUser = "Adjei Godfred 
             {/* Logo and Company Name */}
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">SDC</span>
+                <span className="text-white font-bold text-lg">CM</span>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-orange-500">SDC Capital Limited</h1>
+                <h1 className="text-xl font-bold text-orange-500">CM FUND</h1>
                 <p className="text-xs text-gray-500">Investment Management</p>
               </div>
             </div>
@@ -69,6 +71,19 @@ const Layout: React.FC<LayoutProps> = ({ children, currentUser = "Adjei Godfred 
                 }`}
               >
                 {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </motion.button>
+
+              {/* Toggle Sidebar */}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setIsSidebarHidden(v => !v)}
+                className={`p-2 rounded-lg transition-colors duration-300 ${
+                  isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'
+                }`}
+                title={isSidebarHidden ? 'Show navigation' : 'Hide navigation'}
+              >
+                <Menu className="w-5 h-5" />
               </motion.button>
 
               {/* Notifications */}
@@ -158,12 +173,63 @@ const Layout: React.FC<LayoutProps> = ({ children, currentUser = "Adjei Godfred 
         )}
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {children}
-      </main>
+      {/* Content Area with Sidebar */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
+        <div className="flex gap-6">
+          {/* Sidebar */}
+          {!isSidebarHidden && (
+          <aside className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-purple-200'} hidden md:flex w-56 flex-shrink-0 border rounded-2xl sticky top-24 max-h-[calc(100vh-7rem)]`}> 
+            <nav className="p-3 w-full flex flex-col">
+              <div className="space-y-1">
+                <SidebarItem isDarkMode={isDarkMode} icon={<Home className="w-4 h-4" />} label="Dashboard" active onClick={() => onNavigate?.('dashboard')} />
+                <SidebarItem isDarkMode={isDarkMode} icon={<Wallet className="w-4 h-4" />} label="Trade" onClick={() => onNavigate?.('trade')} />
+                <SidebarItem isDarkMode={isDarkMode} icon={<Briefcase className="w-4 h-4" />} label="Portfolio" onClick={() => onNavigate?.('portfolio')} />
+                <SidebarItem isDarkMode={isDarkMode} icon={<MessageSquare className="w-4 h-4" />} label="Chat" onClick={() => onNavigate?.('chat')} />
+                <SidebarItem isDarkMode={isDarkMode} icon={<LineChart className="w-4 h-4" />} label="Insights" onClick={() => onNavigate?.('insights')} />
+              </div>
+              <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-3 space-y-1">
+                <SidebarItem isDarkMode={isDarkMode} icon={<HelpCircle className="w-4 h-4" />} label="Help & Support" onClick={() => onNavigate?.('help')} />
+                <SidebarItem isDarkMode={isDarkMode} icon={<Settings className="w-4 h-4" />} label="Settings" onClick={() => onNavigate?.('settings')} />
+                <SidebarItem isDarkMode={isDarkMode} icon={<LogOut className="w-4 h-4" />} label="Log Out" onClick={() => onNavigate?.('signin')} />
+              </div>
+            </nav>
+          </aside>
+          )}
+
+          {/* Main Content */}
+          <main className="flex-1 min-w-0">
+            {children}
+          </main>
+        </div>
+      </div>
     </div>
   );
 };
 
 export default Layout;
+ 
+interface SidebarItemProps {
+  isDarkMode: boolean;
+  icon: React.ReactNode;
+  label: string;
+  active?: boolean;
+  onClick?: () => void;
+}
+
+const SidebarItem: React.FC<SidebarItemProps> = ({ isDarkMode, icon, label, active, onClick }) => {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors duration-200 border ${
+        isDarkMode
+          ? `${active ? 'bg-gray-700 border-gray-600' : 'border-transparent hover:bg-gray-700'} text-gray-200`
+          : `${active ? 'bg-gray-100 border-gray-200' : 'border-transparent hover:bg-gray-50'} text-gray-700`
+      }`}
+    >
+      <span className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-orange-500/10 text-orange-600">
+        {icon}
+      </span>
+      <span className="text-sm font-medium">{label}</span>
+    </button>
+  );
+};

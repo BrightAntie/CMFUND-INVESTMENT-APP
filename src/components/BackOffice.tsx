@@ -19,7 +19,7 @@ import {
   MoreVertical
 } from 'lucide-react';
 import Layout from './Layout';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart as RechartsPieChart, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart as RechartsPieChart, Pie, Cell } from 'recharts';
 
 interface BackOfficeProps {
   onNavigate: (page: string) => void;

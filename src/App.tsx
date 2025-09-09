@@ -1,11 +1,17 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from 'react';
+import { motion, AnimatePresence, type Transition } from 'framer-motion';
 import SignUp from './components/SignUp';
 import SignIn from './components/SignIn';
 import Onboarding from './components/Onboarding';
 import Dashboard from './components/Dashboard';
 import BackOffice from './components/BackOffice';
 import ErrorBoundary from './components/ErrorBoundary';
+import Chat from './components/Chat';
+import Help from './components/Help';
+import Settings from './components/Settings';
+import Trade from './components/Trade';
+import Insights from './components/Insights';
+import Portfolio from './components/Portfolio';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('signin');
@@ -20,7 +26,7 @@ function App() {
     out: { opacity: 0, x: 20 }
   };
 
-  const pageTransition = {
+  const pageTransition: Transition = {
     type: 'tween',
     ease: 'anticipate',
     duration: 0.5
@@ -42,7 +48,14 @@ function App() {
             {currentPage === 'signin' && <SignIn onNavigate={handleNavigate} />}
             {currentPage === 'onboarding' && <Onboarding onNavigate={handleNavigate} />}
             {currentPage === 'dashboard' && <Dashboard onNavigate={handleNavigate} />}
+            {currentPage === 'chat' && <Chat onNavigate={handleNavigate} />}
+            {currentPage === 'help' && <Help onNavigate={handleNavigate} />}
+            {currentPage === 'settings' && <Settings onNavigate={handleNavigate} />}
+            {currentPage === 'trade' && <Trade onNavigate={handleNavigate} />}
+            {currentPage === 'insights' && <Insights onNavigate={handleNavigate} />}
+            {currentPage === 'portfolio' && <Portfolio onNavigate={handleNavigate} />}
             {currentPage === 'backoffice' && <BackOffice onNavigate={handleNavigate} />}
+            {/* AdminPanel removed */}
           </motion.div>
         </AnimatePresence>
       </ErrorBoundary>
@@ -57,7 +70,8 @@ function App() {
               { key: 'signup', label: 'Sign Up' },
               { key: 'onboarding', label: 'Onboarding' },
               { key: 'dashboard', label: 'Dashboard' },
-              { key: 'backoffice', label: 'Back Office' }
+              { key: 'backoffice', label: 'Back Office' },
+              
             ].map((page) => (
               <button
                 key={page.key}

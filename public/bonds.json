@@ -1,0 +1,7 @@
+[
+  { "name": "Gov Bond 2027", "coupon": 9.5, "yieldPct": 9.2, "price": 10250 },
+  { "name": "Municipal 2026", "coupon": 7.2, "yieldPct": 7.0, "price": 9850 },
+  { "name": "Corporate A 2028", "coupon": 11.1, "yieldPct": 10.8, "price": 10520 },
+  { "name": "Corporate B 2029", "coupon": 10.0, "yieldPct": 9.7, "price": 10100 }
+]
+
